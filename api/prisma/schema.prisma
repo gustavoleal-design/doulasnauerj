@@ -27,9 +27,11 @@ model User {
 model Mother {
   id           Int        @id @default(autoincrement())
   name         String
+  email        String     @unique // Adicionado para o login delas
+  password     String     // Adicionado para a senha delas
   cpf          String?    @unique
   phone        String?
-  dueDate      DateTime?  // Data prevista para o parto (Muito útil aqui!)
+  dueDate      DateTime?  // Data prevista para o parto
   city         String?
   activities   Activity[] // Relação: Uma mãe participa de várias atividades
   createdAt    DateTime   @default(now())
