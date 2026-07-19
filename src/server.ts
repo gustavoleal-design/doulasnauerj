@@ -298,6 +298,39 @@ app.delete('/activities/:id', async (req, res) => {
   }
 });
 
+// 
+// ROTA: LISTAR TODOS OS ATENDIMENTOS/ATIVIDADES (GET)
+// 
+app.get('/activities', async (req, res) => {
+  try {
+    const activities = await prisma.activity.findMany({
+      orderBy: { 
+        date: 'asc' // Organiza a agenda da mais próxima para a mais distante
+      },
+      include: {
+        mother: {
+          select: {
+            id: true,
+            name: true,
+            phone: true
+          }
+        },
+        doula: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    return res.json(activities);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao buscar a listagem de atendimentos.' });
+  }
+});
+
 // Inicia o servidor
 const PORT = process.env.PORT || 3333;
 app.listen(PORT, () => {
