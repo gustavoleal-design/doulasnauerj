@@ -1,0 +1,73 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Representa os Administradores e as Doulas
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  password     String
+  role         Role       @default(ADMIN)
+  activities   Activity[] // Relação: Uma doula realiza várias atividades
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("users")
+}
+
+// Representa as Mães/Gestantes do projeto
+model Mother {
+  id           Int        @id @default(autoincrement())
+  name         String
+  cpf          String?    @unique
+  phone        String?
+  dueDate      DateTime?  // Data prevista para o parto (Muito útil aqui!)
+  city         String?
+  activities   Activity[] // Relação: Uma mãe participa de várias atividades
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("mothers")
+}
+
+// Representa as Atividades (Agenda)
+model Activity {
+  id          Int      @id @default(autoincrement())
+  title       String   // Ex: "Visita Domiciliar", "Roda de Conversa", "Apoio ao Parto"
+  date        DateTime // Data e hora do início
+  endTime     DateTime // Hora do término (para renderizar na agenda)
+  status      Status   @default(SCHEDULED)
+  notes       String?  @db.Text // Observações do administrador
+
+  // Chaves Estrangeiras
+  motherId    Int
+  mother      Mother   @relation(fields: [motherId], references: [id])
+  
+  doulaId     Int
+  doula       User     @relation(fields: [doulaId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("activities")
+}
+
+enum Role {
+  ADMIN
+  DOULA
+}
+
+enum Status {
+  SCHEDULED // Agendado
+  COMPLETED // Concluído
+  CANCELED  // Cancelado
+  BLOCKED   // Horário Bloqueado na Agenda
+}
