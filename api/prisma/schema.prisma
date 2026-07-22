@@ -9,55 +9,74 @@ datasource db {
 
 // Representa os Administradores e as Doulas
 model User {
-  id           Int        @id @default(autoincrement())
-  name         String
-  email        String     @unique
-  password     String
-  role         Role       @default(ADMIN)
-  activities   Activity[] // Relação: Uma doula realiza várias atividades
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id         Int        @id @default(autoincrement())
+  name       String
+  email      String     @unique
+  password   String
+  role       Role       @default(ADMIN)
+  activities Activity[] // Relação: Uma doula realiza várias atividades
+  messages   Message[]  // Relação: Uma doula envia/recebe várias mensagens
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@map("users")
 }
 
 // Representa as Mães/Gestantes do projeto
 model Mother {
-  id           Int        @id @default(autoincrement())
-  name         String
-  email        String     @unique // Adicionado para o login delas
-  password     String     // Adicionado para a senha delas
-  cpf          String?    @unique
-  phone        String?
-  dueDate      DateTime?  // Data prevista para o parto
-  city         String?
-  activities   Activity[] // Relação: Uma mãe participa de várias atividades
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id         Int        @id @default(autoincrement())
+  name       String
+  email      String     @unique // Adicionado para o login delas
+  password   String     // Adicionado para a senha delas
+  cpf        String?    @unique
+  phone      String?
+  dueDate    DateTime?  // Data prevista para o parto
+  city       String?
+  activities Activity[] // Relação: Uma mãe participa de várias atividades
+  messages   Message[]  // Relação: Uma mãe envia/recebe várias mensagens
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@map("mothers")
 }
 
 // Representa as Atividades (Agenda)
 model Activity {
-  id          Int      @id @default(autoincrement())
-  title       String   // Ex: "Visita Domiciliar", "Roda de Conversa", "Apoio ao Parto"
-  date        DateTime // Data e hora do início
-  endTime     DateTime // Hora do término (para renderizar na agenda)
-  status      Status   @default(SCHEDULED)
-  notes       String?  @db.Text // Observações do administrador
+  id        Int      @id @default(autoincrement())
+  title     String   // Ex: "Visita Domiciliar", "Roda de Conversa", "Apoio ao Parto"
+  date      DateTime // Data e hora do início
+  endTime   DateTime // Hora do término (para renderizar na agenda)
+  status    Status   @default(SCHEDULED)
+  notes     String?  @db.Text // Observações do administrador
 
   // Chaves Estrangeiras
-  motherId    Int
-  mother      Mother   @relation(fields: [motherId], references: [id])
+  motherId  Int
+  mother    Mother   @relation(fields: [motherId], references: [id])
   
-  doulaId     Int
-  doula       User     @relation(fields: [doulaId], references: [id])
+  doulaId   Int
+  doula     User     @relation(fields: [doulaId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("activities")
+}
+
+// Nova tabela de Mensagens (Chat)
+model Message {
+  id        Int        @id @default(autoincrement())
+  content   String     @db.Text
+  sender    SenderType // Identifica quem enviou a mensagem (MOTHER ou STAFF)
+  createdAt DateTime   @default(now())
+
+  // Chaves Estrangeiras (Liga a mensagem a uma Gestante e a uma Doula)
+  motherId  Int
+  mother    Mother     @relation(fields: [motherId], references: [id])
+
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@map("messages")
 }
 
 enum Role {
@@ -70,4 +89,9 @@ enum Status {
   COMPLETED // Concluído
   CANCELED  // Cancelado
   BLOCKED   // Horário Bloqueado na Agenda
+}
+
+enum SenderType {
+  MOTHER // Mensagem enviada pela Gestante
+  STAFF  // Mensagem enviada pela Equipe (Doula/Admin)
 }

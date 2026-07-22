@@ -100,6 +100,14 @@ app.get('/mothers', async (req, res) => {
   return res.json(mothers);
 });
 
+// Listar todos os usuários da equipe (Doulas)
+app.get('/users', async (req, res) => {
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true, role: true }
+  });
+  return res.json(users);
+});
+
 // 
 // 3. ROTA DE LOGIN UNIFICADA (PROCURA EM USER OU MOTHER)
 // 
@@ -144,7 +152,7 @@ app.post('/login', async (req, res) => {
 });
 
 // 
-// 4. ROTA DE AGENDAMENTO DE ATENDIMENTOS (ACTIVITIES)
+// 4. ROTAS DE AGENDAMENTO DE ATENDIMENTOS (ACTIVITIES)
 // 
 app.post('/activities', async (req, res) => {
   try {
@@ -174,7 +182,6 @@ app.post('/activities', async (req, res) => {
   }
 });
 
-// Listar todos os atendimentos (Agenda)
 app.get('/activities', async (req, res) => {
   const activities = await prisma.activity.findMany({
     include: {
@@ -187,18 +194,65 @@ app.get('/activities', async (req, res) => {
   return res.json(activities);
 });
 
-// Deletar um agendamento por ID
-app.delete('/activities/:id', async (request, reply) => {
-  const { id } = request.params as { id: string };
+app.delete('/activities/:id', async (req, res) => {
+  const { id } = req.params;
 
   try {
     await prisma.activity.delete({
       where: { id: Number(id) },
     });
 
-    return reply.status(200).send({ message: 'Agendamento cancelado com sucesso.' });
+    return res.status(200).json({ message: 'Agendamento cancelado com sucesso.' });
   } catch (error) {
-    return reply.status(400).send({ error: 'Erro ao cancelar agendamento.' });
+    return res.status(400).json({ error: 'Erro ao cancelar agendamento.' });
+  }
+});
+
+//
+// 5. ROTAS DE MENSAGENS (CHAT)
+//
+app.get('/messages/:motherId/:userId', async (req, res) => {
+  try {
+    const { motherId, userId } = req.params;
+
+    const messages = await prisma.message.findMany({
+      where: {
+        motherId: Number(motherId),
+        userId: Number(userId),
+      },
+      orderBy: {
+        createdAt: 'asc', // Ordena da mensagem mais antiga para a mais nova
+      },
+    });
+
+    return res.json(messages);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao buscar as mensagens.' });
+  }
+});
+
+app.post('/messages', async (req, res) => {
+  try {
+    const { content, sender, motherId, userId } = req.body;
+
+    if (!content || !sender || !motherId || !userId) {
+      return res.status(400).json({ error: 'Todos os campos da mensagem são obrigatórios.' });
+    }
+
+    const newMessage = await prisma.message.create({
+      data: {
+        content,
+        sender, // Pode ser 'MOTHER' ou 'STAFF'
+        motherId: Number(motherId),
+        userId: Number(userId),
+      },
+    });
+
+    return res.status(201).json(newMessage);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao enviar a mensagem.' });
   }
 });
 
