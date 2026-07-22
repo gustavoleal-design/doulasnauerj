@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import axios from 'axios';
-import { Lock, Mail, Eye, EyeOff, Activity, Calendar, Clock, Plus, LogOut, FileText, UserCheck, Users } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Activity, Calendar, Clock, Plus, LogOut, FileText, UserCheck, Users, Trash2 } from 'lucide-react';
 
 interface UserData {
   id: number;
@@ -59,10 +59,8 @@ export default function App() {
     try {
       const response = await axios.get('http://localhost:3333/activities');
       if (accessType === 'GESTANTE') {
-        // Filtra apenas as atividades da gestante logada
         setActivities(response.data.filter((act: any) => act.motherId === user?.id));
       } else {
-        // Doulas / Staff veem TODAS as solicitações do sistema
         setActivities(response.data);
       }
     } catch (err) {
@@ -112,7 +110,7 @@ export default function App() {
         endTime: endDateTime,
         notes,
         motherId: user.id,
-        doulaId: 1, // Doula responsável inicial
+        doulaId: 1,
       });
 
       setTitle('');
@@ -126,6 +124,17 @@ export default function App() {
       alert('Erro ao criar agendamento. Verifique os dados.');
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleDeleteActivity(id: number) {
+    if (!confirm('Tem certeza de que deseja cancelar este agendamento?')) return;
+
+    try {
+      await axios.delete(`http://localhost:3333/activities/${id}`);
+      fetchActivities();
+    } catch (err) {
+      alert('Erro ao cancelar agendamento.');
     }
   }
 
@@ -143,7 +152,6 @@ export default function App() {
   if (user && accessType === 'STAFF') {
     return (
       <div className="min-h-screen bg-gray-50 font-sans">
-        {/* Navbar */}
         <header className="bg-slate-900 text-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -171,7 +179,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Conteúdo do Painel da Doula */}
         <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -185,7 +192,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Cards de Soluções/Atendimentos */}
           {activities.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
               <Calendar className="mx-auto text-gray-400 mb-3" size={48} />
@@ -203,6 +209,13 @@ export default function App() {
                       </span>
                       <h3 className="font-bold text-slate-900 text-base mt-1">{act.title}</h3>
                     </div>
+                    <button
+                      onClick={() => handleDeleteActivity(act.id)}
+                      className="text-gray-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Cancelar agendamento"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
 
                   <div className="space-y-2.5 text-sm text-slate-600">
@@ -294,9 +307,18 @@ export default function App() {
                 <div key={act.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-gray-900 text-lg">{act.title}</h3>
-                    <span className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
-                      Confirmado
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
+                        Confirmado
+                      </span>
+                      <button
+                        onClick={() => handleDeleteActivity(act.id)}
+                        className="text-gray-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        title="Cancelar agendamento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 space-y-2 text-sm text-gray-600">

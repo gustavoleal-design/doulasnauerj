@@ -187,4 +187,19 @@ app.get('/activities', async (req, res) => {
   return res.json(activities);
 });
 
+// Deletar um agendamento por ID
+app.delete('/activities/:id', async (request, reply) => {
+  const { id } = request.params as { id: string };
+
+  try {
+    await prisma.activity.delete({
+      where: { id: Number(id) },
+    });
+
+    return reply.status(200).send({ message: 'Agendamento cancelado com sucesso.' });
+  } catch (error) {
+    return reply.status(400).send({ error: 'Erro ao cancelar agendamento.' });
+  }
+});
+
 app.listen(3333, () => console.log('Servidor rodando em http://localhost:3333'));
